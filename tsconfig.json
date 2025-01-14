@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es5",                   // يمكنك تعديله حسب متطلباتك
+    "lib": ["dom", "esnext"],           // دعم للمتصفح والإصدارات الحديثة
+    "jsx": "react-jsx",                 // دعم JSX في React
+    "module": "esnext",                 // يسمح لك باستخدام ES Modules
+    "moduleResolution": "node",         // يساعد في حل المسارات
+    "esModuleInterop": true,            // التوافق مع ملفات JavaScript
+    "skipLibCheck": true,               // يمكن تفعيلها لتحسين الأداء
+    "forceConsistentCasingInFileNames": true // لتجنب الأخطاء بسبب التسمية
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
