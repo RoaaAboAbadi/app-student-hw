@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import "./add-form.css";
 import { IStudent } from "../../types";
 import CoursesListForm from "../courses-list-form/courses-list-form.component";
 import { validateStudent } from "../../utils/validation";
 
 const INITIAL_STUDENT = {
-  age: 0,
-  coursesList: [],
-  id: "",
-  isGraduated: false,
-  name: "",
-  absents: 0,
+  student: {
+    age: 0,
+    coursesList: [],
+    id: "",
+    isGraduated: false,
+    name: "",
+    absents: 0,
+  },
+  errorsList: [],
+  isOpen: false,
 };
 
 interface IProps {
@@ -18,44 +22,76 @@ interface IProps {
   onSubmit: (std: IStudent) => void;
 }
 
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "UPDATE_FIELD":
+      return {
+        ...state,
+        student: {
+          ...state.student,
+          [action.payload.field]: action.payload.value,
+        },
+      };
+    case "TOGGLE_FORM":
+      return { ...state, isOpen: !state.isOpen };
+    case "CLEAR_FORM":
+      return { ...state, student: INITIAL_STUDENT.student, errorsList: [] };
+    case "SET_ERRORS":
+      return { ...state, errorsList: action.payload };
+    case "ADD_STUDENT":
+      return { ...state, student: INITIAL_STUDENT.student, errorsList: [] };
+  }
+  throw Error("Error Action");
+};
+
 const AddForm = (props: IProps) => {
-  const [student, setStudent] = useState<IStudent>(INITIAL_STUDENT);
-  const [isOpen, setIsOpen] = useState(false);
-  const [errorsList, setErrorsList] = useState<string[]>([]);
+  // const [student, setStudent] = useState<IStudent>(INITIAL_STUDENT);
+  // const [isOpen, setIsOpen] = useState(false);
+  // const [errorsList, setErrorsList] = useState<string[]>([]);
+
+  const [state, dispatch] = useReducer(reducer, INITIAL_STUDENT);
 
   useEffect(() => {
     console.log("Hello from Add Form component!");
   }, []);
 
   const handleChange = (field: keyof IStudent, value: any) => {
-    setStudent({ ...student, [field]: value });
+    dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
   };
 
   const handleSubmit = () => {
-    const newStudent: IStudent = { ...student, id: Date.now().toString() };
+    const newStudent: IStudent = {
+      ...state.student,
+      id: Date.now().toString(),
+    };
 
     const errors = validateStudent(newStudent);
     if (errors.length > 0) {
-      setErrorsList(errors);
+      dispatch({ type: "SET_ERRORS", payload: errors });
+      console.log("payload");
     } else {
-      setErrorsList([]);
+      dispatch({ type: "ADD_STUDENT" });
       props.onSubmit(newStudent);
       handleClear();
     }
   };
 
   const handleClear = () => {
-    setStudent(INITIAL_STUDENT);
+    dispatch({ type: "CLEAR_FORM" });
   };
 
   const handleCoursesChange = (list: string[]) => {
-    setStudent({ ...student, coursesList: list });
+    handleChange("coursesList", list);
   };
 
   return (
-    <div className={`wrapper ${props.className} ${isOpen ? "open" : "closed"}`}>
-      <button onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? <span>&and; Close </span> : <span>&or; Open </span>}
+    <div
+      className={`wrapper ${props.className} ${
+        state.isOpen ? "open" : "closed"
+      }`}
+    >
+      <button onClick={() => dispatch({ type: "TOGGLE_FORM" })}>
+        {state.isOpen ? <span>&and; Close </span> : <span>&or; Open </span>}
         Add Form
       </button>
       <div className="input">
@@ -63,7 +99,7 @@ const AddForm = (props: IProps) => {
         <input
           id="name"
           type="text"
-          value={student.name}
+          value={state.student.name}
           onChange={(e) => handleChange("name", e.target.value)}
         />
       </div>
@@ -74,7 +110,7 @@ const AddForm = (props: IProps) => {
           type="number"
           min={17}
           max={40}
-          value={student.age}
+          value={state.student.age}
           onChange={(e) => handleChange("age", Number(e.target.value))}
         />
       </div>
@@ -83,29 +119,29 @@ const AddForm = (props: IProps) => {
         <input
           id="isGraduated"
           type="checkbox"
-          checked={student.isGraduated}
+          checked={state.student.isGraduated}
           onChange={(e) => handleChange("isGraduated", e.target.checked)}
         />
       </div>
       <div>
         <CoursesListForm
-          value={student.coursesList}
+          value={state.student.coursesList}
           onSubmit={handleCoursesChange}
         />
       </div>
       <div className="Actions">
         <button
           onClick={handleSubmit}
-          style={{ color: errorsList.length ? "red" : "initial" }}
+          style={{ color: state.errorsList.length ? "red" : "initial" }}
         >
           Submit
         </button>
         <button onClick={handleClear}>Clear</button>
       </div>
-      {Boolean(errorsList.length) && (
+      {Boolean(state.errorsList.length) && (
         <div className="report">
           <h4>You have the following error/s:</h4>
-          {errorsList.map((error) => (
+          {state.errorsList.map((error) => (
             <p key={error}>- {error}</p>
           ))}
         </div>
